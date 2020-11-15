@@ -189,7 +189,7 @@ object DePoolDeployer extends App {
 
   private def sendGrams(address: String)(implicit ctx: Context) = {
     val giver   = "0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"
-    val abi     = AbiJson.fromResource("Giver.abi.json").toOption.get
+    val abi     = AbiJson.fromString(Source.fromResource("Giver.abi.json").mkString).toOption.get
     val callSet = CallSet("grant", input = Option(Map("addr" -> address.asJson)))
     val params  = MessageEncodeParams(abi, Signer.none, Option(giver), None, Option(callSet))
     call(Processing.Request.ProcessMessageWithoutEvents(params))
