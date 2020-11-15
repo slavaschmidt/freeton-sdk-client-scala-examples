@@ -45,25 +45,26 @@ object DePoolDeployer extends App {
     for {
       version <- call(Client.Request.Version)
       _ = println(s"Deploying DePool using SDK client version ${version.version}")
+
       signerKeys <- genKeys(SIGNER)
       devopsKeys <- genKeys(DEVOPS)
       sfmsigKeys <- genKeys(SFMSIG)
       sfmsigAddr <- genAddress(SFMSIG, sfmsigKeys)
       _          <- sendGrams(sfmsigAddr.address)
-      depoolKeys <- genKeys(DEPOOL)
-      depoolAddr <- genAddress(DEPOOL, depoolKeys)
-      _          <- sendGrams(depoolAddr.address)
-      helperKeys <- genKeys(HELPER)
-      helperAddr <- genAddress(HELPER, helperKeys)
-      _          <- sendGrams(helperAddr.address)
+//      depoolKeys <- genKeys(DEPOOL)
+//      depoolAddr <- genAddress(DEPOOL, depoolKeys)
+//      _          <- sendGrams(depoolAddr.address)
+//      helperKeys <- genKeys(HELPER)
+//      helperAddr <- genAddress(HELPER, helperKeys)
+//      _          <- sendGrams(helperAddr.address)
 
       _ = dumpReport(report)
 
-      msigAccount   <- deployMsig(devopsKeys, sfmsigKeys, signerKeys)
-      helperAccount <- deployDePoolHelper(helperKeys, depoolAddr.address)
-      depoolAccount <- deployDePool(depoolKeys, sfmsigAddr.address)
+      msigAccount   <- deployMsig(sfmsigKeys, devopsKeys, signerKeys)
+//      helperAccount <- deployDePoolHelper(helperKeys, depoolAddr.address)
+//      depoolAccount <- deployDePool(depoolKeys, sfmsigAddr.address)
 
-    } yield (msigAccount, depoolAccount, helperAccount)
+    } yield (msigAccount/*, depoolAccount, helperAccount*/)
   }
 
   private def deployMsig(keys: KeyPair*)(implicit ctx: Context) = {
@@ -93,13 +94,7 @@ object DePoolDeployer extends App {
     val deploySet     = DeploySet(tvcFromBytes(tvc))
     val callSet       = CallSet("constructor", None, Option(params))
     val messageParams = MessageEncodeParams(abiJson, signer, None, Option(deploySet), Option(callSet))
-    for {
-      (data, messages, errors) <- callS(Processing.Request.ProcessMessageWithEvents(messageParams))
-      _ = while (! messages.isClosed) {
-        println(messages.collect(10.seconds).mkString("\n"))
-        println(errors.collect(10.seconds).mkString("\n"))
-      }
-    } yield data
+    call(Processing.Request.ProcessMessageWithoutEvents(messageParams))
   }
 
   private def genKeys(name: String)(implicit ctx: Context) =
@@ -192,7 +187,7 @@ object DePoolDeployer extends App {
     }
   }
 
-  private def sendGrams(address: String)(implicit ctx: Context): Future[Processing.Result.ResultOfProcessMessage] = {
+  private def sendGrams(address: String)(implicit ctx: Context) = {
     val giver   = "0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"
     val abi     = AbiJson.fromResource("Giver.abi.json").toOption.get
     val callSet = CallSet("grant", input = Option(Map("addr" -> address.asJson)))
@@ -202,7 +197,7 @@ object DePoolDeployer extends App {
 
   private def base64Bytes(b: Array[Byte]) = new String(java.util.Base64.getEncoder.encode(b))
 
-  Await.ready(doIt(), 30.minutes).value.get match {
+  Await.ready(doIt(), 10.minutes).value.get match {
     case Success(s) => println(s"Done successfully, please inspects the results of the 'out' folder. $s")
     case Failure(er: SdkClientError) => println(s"Failure: ${er.message} - ${er.data.spaces2}")
     case Failure(exception) => println("Failure."); exception.printStackTrace()
