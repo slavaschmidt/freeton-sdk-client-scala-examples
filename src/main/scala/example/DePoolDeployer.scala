@@ -45,7 +45,8 @@ object DePoolDeployer extends App {
     for {
       version <- call(Client.Request.Version)
       _ = println(s"Deploying DePool using SDK client version ${version.version}")
-
+      signerKeys <- genKeys(SIGNER)
+      devopsKeys <- genKeys(DEVOPS)
       sfmsigKeys <- genKeys(SFMSIG)
       sfmsigAddr <- genAddress(SFMSIG, sfmsigKeys)
       _          <- sendGrams(sfmsigAddr.address)
@@ -58,17 +59,18 @@ object DePoolDeployer extends App {
 
       _ = dumpReport(report)
 
-      msigAccount   <- deployMsig(sfmsigKeys)
+      msigAccount   <- deployMsig(devopsKeys, sfmsigKeys, signerKeys)
       helperAccount <- deployDePoolHelper(helperKeys, depoolAddr.address)
       depoolAccount <- deployDePool(depoolKeys, sfmsigAddr.address)
 
     } yield (msigAccount, depoolAccount, helperAccount)
   }
 
-  private def deployMsig(keys: KeyPair)(implicit ctx: Context) = {
+  private def deployMsig(keys: KeyPair*)(implicit ctx: Context) = {
     println("Deploying SafeMultisigWallet contract")
-    val params = Map("owners" -> Seq(s"0x${keys.public}").asJson, "reqConfirms" -> 1.asJson)
-    deploy(SFMSIG, keys, params)
+    val keysSeq =  keys.map(k => s"0x${k.public}")
+    val params = Map("owners" -> keysSeq.asJson, "reqConfirms" -> (keys.length-1).asJson)
+    deploy(SFMSIG, keys.head, params)
   }
 
   private def deployDePool(keys: KeyPair, msigAddress: String)(implicit ctx: Context) = {
@@ -102,7 +104,7 @@ object DePoolDeployer extends App {
 
   private def genKeys(name: String)(implicit ctx: Context) =
     for {
-      seed <- call(Crypto.Request.MnemonicFromRandom(MnemonicDictionary.default, MnemonicDictionary.defaultWordCount))
+      seed <- call(Crypto.Request.MnemonicFromRandom())
       keys <- call(Crypto.Request.MnemonicDeriveSignKeys(seed.phrase))
       _ = writeToFile(keys.asJson.spaces2, s"$name.keys.json")
       _ = report.append(s"$name:\t'${seed.phrase}'\n")
@@ -120,6 +122,8 @@ object DePoolDeployer extends App {
 
   private val SFMSIG = "sfmsig"
   private val DEPOOL = "depool"
+  private val DEVOPS = "devops"
+  private val SIGNER = "signer"
   private val HELPER = "helper"
 
   private val outPath = {
@@ -188,7 +192,7 @@ object DePoolDeployer extends App {
     }
   }
 
-  private def sendGrams(address: String)(implicit ctx: Context): Future[Result.ResultOfProcessMessage] = {
+  private def sendGrams(address: String)(implicit ctx: Context): Future[Processing.Result.ResultOfProcessMessage] = {
     val giver   = "0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"
     val abi     = AbiJson.fromResource("Giver.abi.json").toOption.get
     val callSet = CallSet("grant", input = Option(Map("addr" -> address.asJson)))
