@@ -51,20 +51,20 @@ object DePoolDeployer extends App {
       sfmsigKeys <- genKeys(SFMSIG)
       sfmsigAddr <- genAddress(SFMSIG, sfmsigKeys)
       _          <- sendGrams(sfmsigAddr.address)
-//      depoolKeys <- genKeys(DEPOOL)
-//      depoolAddr <- genAddress(DEPOOL, depoolKeys)
-//      _          <- sendGrams(depoolAddr.address)
-//      helperKeys <- genKeys(HELPER)
-//      helperAddr <- genAddress(HELPER, helperKeys)
-//      _          <- sendGrams(helperAddr.address)
+      depoolKeys <- genKeys(DEPOOL)
+      depoolAddr <- genAddress(DEPOOL, depoolKeys)
+      _          <- sendGrams(depoolAddr.address)
+      helperKeys <- genKeys(HELPER)
+      helperAddr <- genAddress(HELPER, helperKeys)
+      _          <- sendGrams(helperAddr.address)
 
       _ = dumpReport(report)
 
       msigAccount   <- deployMsig(sfmsigKeys, devopsKeys, signerKeys)
-//      helperAccount <- deployDePoolHelper(helperKeys, depoolAddr.address)
-//      depoolAccount <- deployDePool(depoolKeys, sfmsigAddr.address)
+      helperAccount <- deployDePoolHelper(helperKeys, depoolAddr.address)
+      depoolAccount <- deployDePool(depoolKeys, sfmsigAddr.address)
 
-    } yield (msigAccount/*, depoolAccount, helperAccount*/)
+    } yield (msigAccount, depoolAccount, helperAccount)
   }
 
   private def deployMsig(keys: KeyPair*)(implicit ctx: Context) = {
@@ -147,7 +147,7 @@ object DePoolDeployer extends App {
     HELPER -> (fromCacheOrUrl(dePoolHelperAbiUrl), fromCacheOrUrl(dePoolHelperTvcUrl))
   )
 
-  private val proxyContractCode = Source.fromFile(getClass.getClassLoader.getResource("proxyContractCode.base64").getFile).mkString.trim
+  private val proxyContractCode = Source.fromResource("proxyContractCode.base64").mkString.trim
 
   // ------===== misc helper methods =====------ //
 
