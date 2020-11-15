@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.12.12"
 
-lazy val bindingVersion = "1.0.0-SNAPSHOT-3"
+lazy val bindingVersion = "1.0.0-SNAPSHOT-5"
 
 libraryDependencies ++= Seq(
   "org.freeton"    %% "freeton-sdk-client-scala-binding" % bindingVersion,
