@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.12.12"
 
-lazy val bindingVersion = "1.0.0-M2"
+lazy val bindingVersion = "1.0.0-M3"
 
 libraryDependencies ++= Seq(
   "com.dancingcode" %% "freeton-sdk-client-scala-binding" % bindingVersion,

@@ -20,3 +20,4 @@ out
 .vscode
 project/.ploop
 project/metals.sbt
+/lib/
