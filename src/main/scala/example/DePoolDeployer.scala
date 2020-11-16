@@ -23,15 +23,16 @@ import scala.io.Source
 import scala.util.{Failure, Success}
 
 /**
-  * Deploys MultiSig with a single custodian.
+  * Deploys MultiSig with a three custodians and two confirmations.*
   * Then deploys DePool as described [[https://docs.ton.dev/86757ecb2/p/37a848-run-depool here]].
-  * Uses testnet giver to initialize all addresses.
+  * Also deplos DePoolHelper, just for the case.
+  * Uses Devnet giver to initialize all addresses.
   */
 object DePoolDeployer extends App {
 
   val depoolConfiguration = Map[String, Long](
-    "minStake"                  -> 100000000L, // minimum stake (in nanotons) that DePool accepts from participants. It's recommended to set it not less than 10 Tons.
-    "validatorAssurance"        -> 1000000000000L, // minimal stake for validator (in nanotons). If validator has stake less than validatorAssurance, DePool won't be taking part in elections.
+    "minStake"                  -> 10000000000L, // minimum stake (in nanotons) that DePool accepts from participants. It's recommended to set it not less than 10 Tons.
+    "validatorAssurance"        -> 100000000000000L, // minimal stake for validator (in nanotons). If validator has stake less than validatorAssurance, DePool won't be taking part in elections.
     "participantRewardFraction" -> 90L, // percentage of the total DePool reward (in integers, up to 99 inclusive) that goes to Participants.
     "balanceThreshold"          -> 10000000000L // DePool's own balance (in nanotokens), which it will aim to maintain. It is never staked and is spent on DePool operations only.
   )
@@ -78,6 +79,7 @@ object DePoolDeployer extends App {
     println("Deploying DePool contract")
     val parameters = Map("proxyCode" -> proxyContractCode, "validatorWallet" -> msigAddress)
     val params     = depoolConfiguration.mapValues(_.asJson) ++ parameters.mapValues(_.asJson)
+    println(params.asJson.spaces2)
     deploy(DEPOOL, keys, params)
   }
 
@@ -198,9 +200,13 @@ object DePoolDeployer extends App {
 
   private def base64Bytes(b: Array[Byte]) = new String(java.util.Base64.getEncoder.encode(b))
 
-  Await.ready(doIt(), 10.minutes).value.get match {
-    case Success(s) => println(s"Done successfully, please inspects the results of the 'out' folder. $s")
+  private lazy val result = doIt()
+
+  result.onComplete {
+    case Success(s) => println(s"Done successfully, please inspect the results of the 'out' folder. $s")
     case Failure(er: SdkClientError) => println(s"Failure: ${er.message} - ${er.data.spaces2}")
     case Failure(exception) => println("Failure."); exception.printStackTrace()
   }
+
+  Await.result(result, 10.minutes)
 }
