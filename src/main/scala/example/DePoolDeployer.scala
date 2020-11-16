@@ -79,7 +79,6 @@ object DePoolDeployer extends App {
     println("Deploying DePool contract")
     val parameters = Map("proxyCode" -> proxyContractCode, "validatorWallet" -> msigAddress)
     val params     = depoolConfiguration.mapValues(_.asJson) ++ parameters.mapValues(_.asJson)
-    println(params.asJson.spaces2)
     deploy(DEPOOL, keys, params)
   }
 

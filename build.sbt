@@ -4,11 +4,11 @@ version := "0.1"
 
 scalaVersion := "2.12.12"
 
-lazy val bindingVersion = "1.0.0-SNAPSHOT-5"
+lazy val bindingVersion = "1.0.0-M2"
 
 libraryDependencies ++= Seq(
-  "org.freeton"    %% "freeton-sdk-client-scala-binding" % bindingVersion,
-  "ch.qos.logback" % "logback-classic"                   % "1.2.3"
+  "com.dancingcode" %% "freeton-sdk-client-scala-binding" % bindingVersion,
+  "ch.qos.logback"  % "logback-classic"                   % "1.2.3"
 )
 
 fork in Runtime := true
