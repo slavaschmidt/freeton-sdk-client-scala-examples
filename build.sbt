@@ -11,11 +11,11 @@ libraryDependencies ++= Seq(
   "ch.qos.logback"  % "logback-classic"                   % "1.2.3"
 )
 
-fork in Runtime := true
+fork in run := true
 
-envVars in Runtime := Map(
+envVars in run := Map(
   "LD_LIBRARY_PATH" -> (baseDirectory.value / "lib").getPath,
   "PATH"            -> (baseDirectory.value / "lib").getPath
 )
 
-javaOptions in Runtime += s"-Djava.io.freetontmpdir=${(baseDirectory.value / "lib").getPath}"
+javaOptions in run += s"-Djava.io.freetontmpdir=${(baseDirectory.value / "lib").getPath}"
