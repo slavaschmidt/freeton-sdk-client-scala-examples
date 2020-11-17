@@ -26,6 +26,7 @@ import scala.util.{Failure, Success}
   * Deploys MultiSig with a three custodians and two confirmations.*
   * Then deploys DePool as described [[https://docs.ton.dev/86757ecb2/p/37a848-run-depool here]].
   * Also deplos DePoolHelper, just for the case.
+  * Downloads all of the needed contract resources as needed.
   * Uses Devnet giver to initialize all addresses.
   */
 object DePoolDeployer extends App {
@@ -49,18 +50,18 @@ object DePoolDeployer extends App {
           version <- call(Client.Request.Version)
           _ = println(s"Deploying DePool using SDK client version ${version.version}")
 
-          signerKeys <- genKeys(SIGNER)
-          devopsKeys <- genKeys(DEVOPS)
-          sfmsigKeys <- genKeys(SFMSIG)
+          signerKeys <- genMnemonicAndKeys(SIGNER)
+          devopsKeys <- genMnemonicAndKeys(DEVOPS)
+          sfmsigKeys <- genMnemonicAndKeys(SFMSIG)
         } yield (signerKeys, devopsKeys, sfmsigKeys)
       }
 
       sfmsigAddr <- genAddress(SFMSIG, sfmsigKeys)
       _          <- sendGrams(sfmsigAddr.address)
-      depoolKeys <- genKeys(DEPOOL)
+      depoolKeys <- genMnemonicAndKeys(DEPOOL)
       depoolAddr <- genAddress(DEPOOL, depoolKeys)
       _          <- sendGrams(depoolAddr.address)
-      helperKeys <- genKeys(HELPER)
+      helperKeys <- genMnemonicAndKeys(HELPER)
       helperAddr <- genAddress(HELPER, helperKeys)
       _          <- sendGrams(helperAddr.address)
 
@@ -93,6 +94,7 @@ object DePoolDeployer extends App {
     deploy(HELPER, keys, params)
   }
 
+  // Generates name contract taking its contents from `contracts` map using provided keypair for signing
   private def deploy(name: String, keys: KeyPair, params: Map[String, Json])(implicit ctx: Context) = {
     val signer = Signer.fromKeypair(keys)
     val (abi, tvc) = contracts(name)
@@ -103,7 +105,7 @@ object DePoolDeployer extends App {
     call(Processing.Request.ProcessMessageWithoutEvents(messageParams))
   }
 
-  private def genKeys(name: String)(implicit ctx: Context) =
+  private def genMnemonicAndKeys(name: String)(implicit ctx: Context) =
     for {
       seed <- call(Crypto.Request.MnemonicFromRandom())
       keys <- call(Crypto.Request.MnemonicDeriveSignKeys(seed.phrase))
@@ -178,6 +180,7 @@ object DePoolDeployer extends App {
 
   private def dumpReport(report: StringBuilder) = writeToFile(report.result(), "report.txt")
 
+  // reads contract contents from the cache or if not yet cached downloads and caches it
   private def fromCacheOrUrl(address: String): Array[Byte] = {
     val url      = new URL(address)
     val fileName = url.getFile.split("/").last
@@ -195,6 +198,7 @@ object DePoolDeployer extends App {
     }
   }
 
+  // sends 100 grams to given address using giver contract
   private def sendGrams(address: String)(implicit ctx: Context) = {
     val giver   = "0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"
     val abi     = AbiJson.fromString(giverAbiCode).toOption.get
@@ -205,13 +209,16 @@ object DePoolDeployer extends App {
 
   private def base64Bytes(b: Array[Byte]) = new String(java.util.Base64.getEncoder.encode(b))
 
+  // actually execute the main method
   private lazy val result = doIt()
 
+  // output the result as soon as it completes
   result.onComplete {
     case Success(s) => println(s"Done successfully, please inspect the results of the 'out' folder. $s")
     case Failure(er: SdkClientError) => println(s"Failure: ${er.message} - ${er.data.spaces2}")
     case Failure(exception) => println("Failure."); exception.printStackTrace()
   }
 
+  // wait for the async result
   Await.result(result, 10.minutes)
 }
