@@ -1,11 +1,12 @@
 # Examples for the TON SDK client Scala binding
 
-This repository is a collection of standalone examples using [scala binding for freeton SDK client](https://github.com/slavaschmidt/ton-sdk-client-scala-binding).
-It aims to provide insight into intended binding usage scenarios.
+This repository is a collection of standalone examples using [scala binding](https://github.com/slavaschmidt/ton-sdk-client-scala-binding)
+for [Freeton SDK client](https://github.com/tonlabs/TON-SDK).
+It aims to provide insight into intended usage scenarios for the binding.
 
 ## Prerequisites
 
-This project has the same prerequisites as the binding project. Please consult this [prerequisites](https://github.com/slavaschmidt/ton-sdk-client-scala-binding#prerequisites)
+This project has the same prerequisites as the binding project. Please consult this [prerequisites description](https://github.com/slavaschmidt/ton-sdk-client-scala-binding#prerequisites)
 for detailed information.
 
 ## Running examples
@@ -19,7 +20,7 @@ Common for all examples, this repository demonstrates following aspects of using
 ### build.sbt
 
 - the [build.sbt](build.sbt) contains the definitions of the appropriate environment variables for windows and linux 
-needed for the OS in order do load the native libraries:
+needed for the OS do load the native libraries:
 ```scala
 envVars in run := Map(
   "LD_LIBRARY_PATH" -> (baseDirectory.value / "lib").getPath,
@@ -30,22 +31,22 @@ envVars in run := Map(
 ```scala
 fork in run := true
 ```
-- forking is also necessary to be able to run examples multiple times in sbt [interactive mode](https://www.scala-sbt.org/1.x/docs/Howto-Interactive-Mode.html) 
+- forking is also necessary for running examples multiple times in sbt [interactive mode](https://www.scala-sbt.org/1.x/docs/Howto-Interactive-Mode.html) 
 
-- it also contains an example of how the target for native libraries can be defined:
+- following demonstrates how the target for native libraries can be defined:
 ```scala
 javaOptions in run += s"-Djava.io.freetontmpdir=${(baseDirectory.value / "lib").getPath}"
 ```
 
-- the binding library users logback for logging but does not include any logging backends. This project includes logback as logging backend:
+- the binding library users [logback](http://logback.qos.ch/) for logging but does not include any logging backends. This project includes `logback-classic` as logging backend:
 ```scala
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 ``` 
 
 ### logback.xml
 
-The [logback.xml](src/main/resources/logback.xml) overrides default log4j configuration in a way to reveal internal communication between the binding code and the ton client.
-Changing the "TRACE" logging level to "DEBUG", "INFO", "WARN" or "ERROR" makes the binding successively less noisy.
+The [logback.xml](src/main/resources/logback.xml) overrides default log4j configuration to reveal internal communication flow between the binding code and the ton client.
+Changing the `"TRACE"` logging level to `"DEBUG"`, `"INFO"`, `"WARN"` or `"ERROR"` makes the binding successively less noisy.
 
   
 ## Examples
@@ -71,12 +72,12 @@ The DePoolDeployer fully automates depool contract deployment from zero state by
 - Deploying depool contract with the configuration specified at the top of the [DePoolDeployer](src/main/scala/example/DePoolDeployer.scala)
 source code
 
-From the technical point of view, few aspects illustrated:
+From the technical point of view, following aspects are illustrated:
 
 - initial loading of native libraries with `NativeLoader.apply()`
 - usage of `futureEffect` and `executionContext` for asyncronous processing
 - nested contexts with shadowing
-- for comprehension for nice interaction with `Future`s
+- for-comprehension for nice interaction with `Future`s
 - waiting for the resulting effect to complete at the bottom of the example
 - it looks like the use of the string function id [depool contract](out/contracts/DePool.abi.json) itself is not fully compatible with the client v1.0.0.
 This example uses version customized by replacing function id in string hex form `"0x4E73744B"` with its decimal numeric equivalent `1316189259`. 
