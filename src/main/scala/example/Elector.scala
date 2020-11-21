@@ -27,7 +27,7 @@ object Elector extends App {
 
   private val accFilter = Map("id" -> Map("eq" -> "-1:3333333333333333333333333333333333333333333333333333333333333333")).asJson
 
-  def readStakesFromElector() = mainNet { implicit ctx =>
+  def readStakesFromElector() = devNet { implicit ctx =>
     for {
       account <- call(Net.Request.QueryCollection("accounts", filter = Option(accFilter), result = "code data", limit = Option(1)))
       electorData = account.result.head.as[CodeAndData].toOption.get
