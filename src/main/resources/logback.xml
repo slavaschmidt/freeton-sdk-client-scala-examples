@@ -9,7 +9,7 @@
         </layout>
     </appender>
 
-    <logger name="ton.sdk.client.binding" level="trace" additivity="false">
+    <logger name="ton.sdk.client.binding" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 
